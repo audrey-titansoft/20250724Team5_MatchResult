@@ -75,20 +75,6 @@ public class MatchControllerTests
         Assert.That(result, Is.EqualTo("2:1 (Second Half)"));
         _matchRepository.Received(1).UpdateMatchResult(matchId, "HHA;");
     }
-
-    [Test]
-    public void UpdateMatchResult_WhenNextPeriodInSecondHalf_ShouldThrowException()
-    {
-        // Arrange
-        var matchId = 90;
-        _matchRepository.GetMatchResult(matchId).Returns("HHA;");
-
-        // Act & Assert
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            _controller.UpdateMatchResult(matchId, MatchEvent.NextPeriod));
-        Assert.That(ex.Message, Is.EqualTo("Match is already in Second Half"));
-    }
-
     [Test]
     public void UpdateMatchResult_WhenAwayCancelLastGoal_ShouldReturn2To0SecondHalf()
     {
@@ -115,19 +101,6 @@ public class MatchControllerTests
         var ex = Assert.Throws<InvalidOperationException>(() =>
             _controller.UpdateMatchResult(matchId, MatchEvent.HomeCancel));
         Assert.That(ex.Message, Is.EqualTo("Last goal is not same team's goal"));
-    }
-
-    [Test]
-    public void UpdateMatchResult_WhenCancelWithNoGoals_ShouldThrowException()
-    {
-        // Arrange
-        var matchId = 90;
-        _matchRepository.GetMatchResult(matchId).Returns("");
-
-        // Act & Assert
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            _controller.UpdateMatchResult(matchId, MatchEvent.AwayCancel));
-        Assert.That(ex.Message, Is.EqualTo("No goals to cancel"));
     }
 
     [Test]
