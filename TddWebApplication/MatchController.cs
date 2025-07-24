@@ -90,6 +90,7 @@ public class MatchController : Controller
                 if (isSecondHalf)
                     throw new InvalidOperationException("Match is already in Second Half");
                 newResult = originalMatchResult + ";";
+                isSecondHalf = true;
                 break;
             case MatchEvent.HomeCancel:
             case MatchEvent.AwayCancel:

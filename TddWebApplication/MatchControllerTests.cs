@@ -75,6 +75,7 @@ public class MatchControllerTests
         Assert.That(result, Is.EqualTo("2:1 (Second Half)"));
         _matchRepository.Received(1).UpdateMatchResult(matchId, "HHA;");
     }
+    
     [Test]
     public void UpdateMatchResult_WhenAwayCancelLastGoal_ShouldReturn2To0SecondHalf()
     {
