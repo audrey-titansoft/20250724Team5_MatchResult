@@ -74,7 +74,8 @@ public class MatchController : Controller
     public string UpdateMatchResult(int matchId, MatchEvent matchEvent)
     {
         var currentResult = _matchRepository.GetMatchResult(matchId);
-        var isSecondHalf = currentResult.Contains(";");
+        var isSecondHalf = currentResult.Contains(';');
+        var events = currentResult.Replace(";", "").ToCharArray();
         string newResult;
         
         switch (matchEvent)
@@ -87,9 +88,30 @@ public class MatchController : Controller
                 break;
             case MatchEvent.NextPeriod:
                 if (isSecondHalf)
-                    throw new InvalidOperationException("比赛已经在下半场");
+                    throw new InvalidOperationException("Match is already in Second Half");
                 newResult = currentResult + ";";
                 break;
+            case MatchEvent.HomeCancel:
+            case MatchEvent.AwayCancel:
+                if (events.Length == 0)
+                    throw new InvalidOperationException("No goals to cancel");
+                
+                var lastEvent = events[^1];
+                var lastEventIsNextPeriod = currentResult[^1] == ';';
+
+                if ((matchEvent == MatchEvent.HomeCancel && lastEvent != 'H') ||
+                    (matchEvent == MatchEvent.AwayCancel && lastEvent != 'A'))
+                    throw new InvalidOperationException("Last goal is not same team's goal");
+                
+                if (lastEventIsNextPeriod)
+                {
+                    newResult = currentResult[..^2] + currentResult[^1];
+                }
+                else
+                {
+                    newResult = currentResult[..^1];
+                }
+                break; 
             default:
                 return string.Empty;
         }
@@ -98,7 +120,7 @@ public class MatchController : Controller
         
         var homeGoals = newResult.Count(c => c == 'H');
         var awayGoals = newResult.Count(c => c == 'A');
-        var period = isSecondHalf || matchEvent == MatchEvent.NextPeriod ? "下半场" : "上半场";
+        var period = isSecondHalf || matchEvent == MatchEvent.NextPeriod ? "Second Half" : "First Half";
         
         return $"{homeGoals}:{awayGoals} ({period})";
     }
