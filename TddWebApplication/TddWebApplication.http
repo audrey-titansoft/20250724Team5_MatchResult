@@ -1,0 +1,6 @@
+@TddWebApplication_HostAddress = http://localhost:5189
+
+GET {{TddWebApplication_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
