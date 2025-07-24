@@ -71,13 +71,35 @@ public class MatchController : Controller
     // let's implement the logic one by one, step by step, with the respective test
 
     [HttpPost]
-    public IActionResult UpdateMatchResult(int matchId, int matchEvent)
+    public string UpdateMatchResult(int matchId, MatchEvent matchEvent)
     {
-        if (matchEvent == (int)MatchEvent.HomeGoal)
+        var currentResult = _matchRepository.GetMatchResult(matchId);
+        var isSecondHalf = currentResult.Contains(";");
+        string newResult;
+        
+        switch (matchEvent)
         {
-            _matchRepository.UpdateMatchResult(matchId, "H");
-            return Ok("1:0 (上半场)");
+            case MatchEvent.HomeGoal:
+                newResult = currentResult + "H";
+                break;
+            case MatchEvent.AwayGoal:
+                newResult = currentResult + "A";
+                break;
+            case MatchEvent.NextPeriod:
+                if (isSecondHalf)
+                    throw new InvalidOperationException("比赛已经在下半场");
+                newResult = currentResult + ";";
+                break;
+            default:
+                return string.Empty;
         }
-        return Ok();
+
+        _matchRepository.UpdateMatchResult(matchId, newResult);
+        
+        var homeGoals = newResult.Count(c => c == 'H');
+        var awayGoals = newResult.Count(c => c == 'A');
+        var period = isSecondHalf || matchEvent == MatchEvent.NextPeriod ? "下半场" : "上半场";
+        
+        return $"{homeGoals}:{awayGoals} ({period})";
     }
 }
