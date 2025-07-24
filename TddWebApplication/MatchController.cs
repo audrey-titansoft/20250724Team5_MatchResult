@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using TddWebApplication.Enum;
+using TddWebApplication.Repo;
 
 namespace TddWebApplication;
 
@@ -67,62 +69,53 @@ public class MatchController : Controller
      * --------|------------
      * 90      | HHA;
      */
-     
+
     // let's implement the logic one by one, step by step, with the respective test
 
     [HttpPost]
     public string UpdateMatchResult(int matchId, MatchEvent matchEvent)
     {
         var originalMatchResult = _matchRepository.GetMatchResult(matchId);
-        var isSecondHalf = originalMatchResult.Contains(';');
-        var events = originalMatchResult.Replace(";", "").ToCharArray();
+        var isSecondHalf = originalMatchResult.IsSecondHalf();
         string newResult;
-        
+
         switch (matchEvent)
         {
             case MatchEvent.HomeGoal:
-                newResult = originalMatchResult + "H";
+                newResult = originalMatchResult.CurrentResult + "H";
                 break;
             case MatchEvent.AwayGoal:
-                newResult = originalMatchResult + "A";
+                newResult = originalMatchResult.CurrentResult + "A";
                 break;
             case MatchEvent.NextPeriod:
                 if (isSecondHalf)
                     throw new InvalidOperationException("Match is already in Second Half");
-                newResult = originalMatchResult + ";";
-                isSecondHalf = true;
+                newResult = originalMatchResult.CurrentResult + ";";
                 break;
             case MatchEvent.HomeCancel:
             case MatchEvent.AwayCancel:
-                if (events.Length == 0)
+                if (!originalMatchResult.HasEvent())
                     throw new InvalidOperationException("No goals to cancel");
-                
-                var lastEvent = events[^1];
-                var isLastEventNextPeriod = originalMatchResult[^1] == ';';
+
+                var lastEvent = originalMatchResult.GetLastGoal();
 
                 if ((matchEvent == MatchEvent.HomeCancel && lastEvent != 'H') ||
                     (matchEvent == MatchEvent.AwayCancel && lastEvent != 'A'))
                     throw new InvalidOperationException("Last goal is not same team's goal");
-                
-                if (isLastEventNextPeriod)
-                {
-                    newResult = originalMatchResult[..^2] + originalMatchResult[^1];
-                }
-                else
-                {
-                    newResult = originalMatchResult[..^1];
-                }
+
+                newResult = originalMatchResult.GetMatchResultWithoutLastEvent();
+
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(matchEvent), matchEvent, null);
+                return string.Empty;
         }
 
         _matchRepository.UpdateMatchResult(matchId, newResult);
-        
+
         var homeGoals = newResult.Count(c => c == 'H');
         var awayGoals = newResult.Count(c => c == 'A');
-        var period = isSecondHalf ? "Second Half" : "First Half";
-        
+        var period = isSecondHalf || matchEvent == MatchEvent.NextPeriod ? "Second Half" : "First Half";
+
         return $"{homeGoals}:{awayGoals} ({period})";
     }
 }

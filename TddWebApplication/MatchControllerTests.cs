@@ -1,5 +1,8 @@
 using NSubstitute;
 using NUnit.Framework;
+using TddWebApplication.Enum;
+using TddWebApplication.Model;
+using TddWebApplication.Repo;
 
 namespace TddWebApplication.Tests;
 
@@ -21,7 +24,7 @@ public class MatchControllerTests
     {
         // Arrange
         var matchId = 90;
-        _matchRepository.GetMatchResult(matchId).Returns("");
+        _matchRepository.GetMatchResult(matchId).Returns(new Match { MatchId = matchId, CurrentResult = "" });
 
         // Act
         var result = _controller.UpdateMatchResult(matchId, MatchEvent.HomeGoal);
@@ -36,7 +39,7 @@ public class MatchControllerTests
     {
         // Arrange
         var matchId = 90;
-        _matchRepository.GetMatchResult(matchId).Returns("H");
+        _matchRepository.GetMatchResult(matchId).Returns(new Match { MatchId = matchId, CurrentResult = "H" });
 
         // Act
         var result = _controller.UpdateMatchResult(matchId, MatchEvent.HomeGoal);
@@ -51,7 +54,7 @@ public class MatchControllerTests
     {
         // Arrange
         var matchId = 90;
-        _matchRepository.GetMatchResult(matchId).Returns("HH");
+        _matchRepository.GetMatchResult(matchId).Returns(new Match { MatchId = matchId, CurrentResult = "HH" });
 
         // Act
         var result = _controller.UpdateMatchResult(matchId, MatchEvent.AwayGoal);
@@ -66,7 +69,7 @@ public class MatchControllerTests
     {
         // Arrange
         var matchId = 90;
-        _matchRepository.GetMatchResult(matchId).Returns("HHA");
+        _matchRepository.GetMatchResult(matchId).Returns(new Match { MatchId = matchId, CurrentResult = "HHA" });
 
         // Act
         var result = _controller.UpdateMatchResult(matchId, MatchEvent.NextPeriod);
@@ -75,13 +78,13 @@ public class MatchControllerTests
         Assert.That(result, Is.EqualTo("2:1 (Second Half)"));
         _matchRepository.Received(1).UpdateMatchResult(matchId, "HHA;");
     }
-    
+
     [Test]
     public void UpdateMatchResult_WhenAwayCancelLastGoal_ShouldReturn2To0SecondHalf()
     {
         // Arrange
         var matchId = 90;
-        _matchRepository.GetMatchResult(matchId).Returns("HHA;");
+        _matchRepository.GetMatchResult(matchId).Returns(new Match { MatchId = matchId, CurrentResult = "HHA;" });
 
         // Act
         var result = _controller.UpdateMatchResult(matchId, MatchEvent.AwayCancel);
@@ -96,7 +99,8 @@ public class MatchControllerTests
     {
         // Arrange
         var matchId = 90;
-        _matchRepository.GetMatchResult(matchId).Returns("HHA;");
+        var match = new Match { MatchId = matchId, CurrentResult = "HHA;" };
+        _matchRepository.GetMatchResult(matchId).Returns(match);
 
         // Act & Assert
         var ex = Assert.Throws<InvalidOperationException>(() =>
@@ -110,8 +114,9 @@ public class MatchControllerTests
         // Arrange
         var matchId = 1;
         var initialResult = "HHA;H";
+        var match = new Match { MatchId = matchId, CurrentResult = initialResult };
         var matchRepository = Substitute.For<IMatchRepository>();
-        matchRepository.GetMatchResult(matchId).Returns(initialResult);
+        matchRepository.GetMatchResult(matchId).Returns(match);
         var controller = new MatchController(matchRepository);
 
         // Act
